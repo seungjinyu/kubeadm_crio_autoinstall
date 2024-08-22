@@ -6,6 +6,9 @@ CRIO_VERSION="v1.30"
 
 ADVERTISE_ADDRESS="192.168.251.130"  # Replace with your actual IP address
 
+CONFIG_FILE="/etc/crio/crio.conf.d/10-crio.conf"
+
+
 cat <<EOF | sudo tee /etc/modules-load.d/containerd.conf
 overlay
 br_netfilter
@@ -61,6 +64,18 @@ cat <<EOF | sudo tee /etc/crio/crio.conf
 default_runtime = "runc"
 enable_criu_support = true
 EOF
+
+# Check if the file exists
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Configuration file not found: $CONFIG_FILE"
+    exit 1
+fi
+
+# Update the default_runtime from "crun" to "runc"
+sed -i 's/default_runtime = "crun"/default_runtime = "runc"/' "$CONFIG_FILE"
+# Add the enable_criu_support option under the [crio.runtime] section
+# If it already exists, it will be updated; if not, it will be added
+sed -i '/\[crio.runtime\]/a enable_criu_support = true' "$CONFIG_FILE"
 
 # Step 9: Create the kubeadm-config.yaml configuration file
 cat <<EOF | sudo tee /etc/kubernetes/kubeadm-config.yaml
